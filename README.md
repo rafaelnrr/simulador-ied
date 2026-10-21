@@ -121,10 +121,12 @@ O script:
 1. confere a versão do Python e instala o `python3-venv`, se faltar (pede `sudo`);
 2. cria o ambiente virtual `.venv` e instala as dependências;
 3. cria `simied.conf` a partir de `simied.conf.exemplo`, se ele ainda não existir;
-4. cria o serviço systemd `simied` (`/etc/systemd/system/simied.service`), que sobe no boot, reinicia sozinho
+4. na primeira instalação, cria o **usuário administrador** com uma senha aleatória, mostra a senha na tela e a
+   grava em `CREDENCIAIS_ADMIN.txt` (veja o passo 4 abaixo);
+5. cria o serviço systemd `simied` (`/etc/systemd/system/simied.service`), que sobe no boot, reinicia sozinho
    se cair e recebe só as permissões de rede necessárias (`CAP_NET_BIND_SERVICE`, `CAP_NET_ADMIN` e
    `CAP_NET_RAW`);
-5. liga o serviço.
+6. liga o serviço.
 
 Comandos úteis do serviço:
 
@@ -149,15 +151,29 @@ vale para todo uso desse Python):
 sudo setcap cap_net_bind_service,cap_net_admin,cap_net_raw=+ep "$(readlink -f .venv/bin/python)"
 ```
 
-### 4. Criar o usuário administrador
+### 4. Credenciais de acesso
 
-Fora de `127.0.0.1`, o login é obrigatório. Crie o usuário administrador antes de subir:
+O `instalar.sh` já cria o usuário administrador. No fim da instalação ele mostra:
 
-```bash
-.venv/bin/python -m simied usuario admin --papel administrador
+```
+usuário administrador criado
+  usuario: admin
+  senha:   <senha gerada na instalação>
+  (guardado em /caminho/sim_ied/CREDENCIAIS_ADMIN.txt; troque a senha no primeiro acesso)
 ```
 
-A senha é pedida duas vezes no terminal.
+| Campo | Valor |
+|---|---|
+| **Usuário** | `admin` |
+| **Senha** | gerada na instalação; para ver de novo: `cat CREDENCIAIS_ADMIN.txt` |
+
+- A senha é **aleatória e diferente em cada máquina**. Por isso não há senha padrão publicada: quem só leu o
+  repositório não consegue entrar num simulador instalado.
+- O arquivo `CREDENCIAIS_ADMIN.txt` fica na pasta do projeto com permissão `600` (só o dono lê) e está no
+  `.gitignore`.
+- Se o banco já tem usuário (reinstalação ou atualização), o script não cria outro nem troca a senha.
+- **Troque a senha no primeiro acesso** (veja [Usuário administrador](#usuário-administrador)). Depois disso,
+  apague o `CREDENCIAIS_ADMIN.txt`, porque ele continua com a senha antiga.
 
 ### 5. Firewall
 
@@ -201,7 +217,9 @@ com hash). Ele tem acesso a todas as funções: operar os IEDs (iniciar e parar,
 ensaios, subida de pontos, comandos de teste) e alterar a configuração (criar e excluir IEDs, perfis, lógicas,
 editar e aplicar CIDs, preferências do servidor e backup).
 
-- **Criar** (ou redefinir a senha), com o serviço parado ou não:
+- **Criação**: automática na primeira instalação (usuário `admin`, senha em `CREDENCIAIS_ADMIN.txt`; veja
+  [Credenciais de acesso](#4-credenciais-de-acesso)).
+- **Redefinir a senha** (ou criar o usuário à mão), com o serviço parado ou não:
 
   ```bash
   .venv/bin/python -m simied usuario admin --papel administrador
@@ -210,7 +228,7 @@ editar e aplicar CIDs, preferências do servidor e backup).
   A senha (mínimo de 8 caracteres) é pedida duas vezes. Rodar o comando de novo com o mesmo nome troca a senha.
 - **Trocar a senha pela interface**: menu do usuário (canto superior direito) › **Configuração e minha conta**.
 - Trocar a senha encerra os logins abertos.
-- Guarde a senha num cofre de senhas, não num arquivo dentro da pasta do projeto.
+- Depois de trocar a senha, guarde-a num cofre de senhas e apague o `CREDENCIAIS_ADMIN.txt`.
 
 ---
 
@@ -246,7 +264,7 @@ conflitar com o relé real (RN-NET-03). Para testar só na própria máquina, us
 
 Roteiro mínimo para colocar um IED no ar e vê-lo no SAGE:
 
-1. **Entre** em `http://<IP>:8080/` com um usuário administrador.
+1. **Entre** em `http://<IP>:8080/` com o usuário `admin` e a senha de `CREDENCIAIS_ADMIN.txt`, e troque a senha.
 2. **Crie o IP do IED** em **Rede › Criar IP secundário** (por exemplo, o mesmo IP do relé real numa rede de
    teste isolada, ou um IP reservado).
 3. Em **IEDs**, clique em **Novo IED a partir do CID** e escolha o arquivo `.cid` (há exemplos na pasta
@@ -829,7 +847,7 @@ sim_ied/
 ├── profiles/               # perfis fornecidos (somente leitura)
 ├── exemplos/               # CIDs de exemplo e gerador
 ├── tests/                  # testes (pytest)
-├── instalar.sh             # instalação (+ serviço systemd com --servico)
+├── instalar.sh             # instalação, usuário admin inicial (+ serviço systemd com --servico)
 ├── iniciar.sh              # partida, lendo simied.conf
 ├── simied.conf.exemplo     # modelo de configuração
 ├── requirements.txt
@@ -844,7 +862,7 @@ sim_ied/
 
 | Sintoma | Causa provável e solução |
 |---|---|
-| `RN-UI-06: fora de 127.0.0.1 a autenticação é obrigatória` | O usuário administrador ainda não foi criado. Crie-o: `.venv/bin/python -m simied usuario admin --papel administrador`. |
+| `RN-UI-06: fora de 127.0.0.1 a autenticação é obrigatória` | O usuário administrador ainda não foi criado (o `instalar.sh` não rodou nesta pasta de dados). Crie-o: `.venv/bin/python -m simied usuario admin --papel administrador`. |
 | `RN-NET-08: a administração não pode escutar em todas as interfaces` | `SIMIED_HOST` está como `0.0.0.0`. Use o IP de gerenciamento. |
 | `IP de administração X não existe nesta máquina` | O IP de `SIMIED_HOST` não está em nenhuma placa. Confira com `ip -br addr`. |
 | `interface enp0s3 sem IP do DHCP` | A interface de `SIMIED_IFACE` não recebeu IP em 60 s. Confira o nome da interface e o DHCP, ou use `SIMIED_HOST`. |

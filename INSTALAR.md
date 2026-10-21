@@ -16,14 +16,13 @@ Antes de ligar (ou depois, com `sudo systemctl restart simied`), ajuste `simied.
   Não pode ser `0.0.0.0` e **não pode ser usado por IEDs** (RN-NET-08). Para os IEDs, reserve outro IP
   na mesma placa: `sudo ip addr add 192.168.74.X/23 dev <interface>` (para ficar permanente, coloque no netplan).
 
-Crie o usuário administrador (único usuário desta versão; a senha é pedida duas vezes):
+Na primeira instalação, o `instalar.sh` cria o usuário administrador (único usuário desta versão): usuário
+`admin` e uma senha aleatória, mostrada no fim da instalação e gravada em `CREDENCIAIS_ADMIN.txt` (permissão 600,
+fora do git). Para ver de novo: `cat CREDENCIAIS_ADMIN.txt`.
 
-```bash
-.venv/bin/python -m simied usuario admin --papel administrador
-```
-
-Acesse `http://<SIMIED_HOST>:8080/` e entre com esse usuário. Para trocar a senha, rode o mesmo comando de novo
-ou use **Configuração e minha conta** na interface.
+Acesse `http://<SIMIED_HOST>:8080/`, entre com essas credenciais e **troque a senha** em
+**Configuração e minha conta** (ou com `.venv/bin/python -m simied usuario admin --papel administrador`).
+Depois apague o `CREDENCIAIS_ADMIN.txt`.
 
 ## Sem o serviço systemd
 

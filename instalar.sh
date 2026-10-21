@@ -16,6 +16,27 @@ fi
 [ -f simied.conf ] || cp simied.conf.exemplo simied.conf
 chmod +x iniciar.sh
 echo "dependências instaladas em $DIR/.venv"
+
+# Primeira instalação: cria o usuário admin com senha aleatória e grava em CREDENCIAIS_ADMIN.txt (só o dono lê).
+# Não mexe no banco que já tem usuário. Trocar a senha: .venv/bin/python -m simied usuario admin --papel administrador
+.venv/bin/python - <<'PY'
+import secrets
+from pathlib import Path
+from simied.auth import Auth
+from simied.storage import Storage
+
+st = Storage(Path("data") / "simied.db")
+if not st.users():
+    senha = secrets.token_urlsafe(12)
+    Auth(st, True).add_user("admin", senha, "administrador")
+    arq = Path("CREDENCIAIS_ADMIN.txt")
+    arq.touch(mode=0o600)
+    arq.chmod(0o600)
+    arq.write_text(f"usuario: admin\nsenha: {senha}\n")
+    print(f"\nusuário administrador criado\n  usuario: admin\n  senha:   {senha}\n"
+          f"  (guardado em {arq.resolve()}; troque a senha no primeiro acesso)\n")
+st.close()
+PY
 echo "ajuste SIMIED_IFACE ou SIMIED_HOST em $DIR/simied.conf (interfaces: $(ip -br -4 addr | awk '$1 != "lo" {printf "%s %s  ", $1, $3}'))"
 
 if [ "${1:-}" = "--servico" ]; then
