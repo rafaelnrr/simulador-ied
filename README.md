@@ -468,7 +468,7 @@ Editor gráfico de diagramas de blocos, que funciona como um CLP dentro do relé
   | Bloco | Função |
   |---|---|
   | `entrada` | lê um ponto do IED (digital ou analógico) |
-  | `comando` | recebe um comando de um objeto de controle; o eco automático desliga e a lógica decide |
+  | `comando` | recebe um comando de um objeto de controle; a lógica decide o que acontece. O estado do próprio objeto (ex.: CSWI.Pos) continua acompanhando o comando, a não ser que alguma lógica escreva nele com um bloco `saida` |
   | `const` | valor constante |
   | `and`, `or`, `xor`, `not` | lógica booleana |
   | `ton`, `tof` | temporizador na ligação / no desligamento |

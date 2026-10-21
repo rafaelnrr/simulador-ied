@@ -23,7 +23,7 @@ DBL = {"DPS", "DPC"}
 # Catálogo de blocos (a interface usa os mesmos nomes de portas).
 BLOCOS = {
     "entrada": {"grupo": "Entradas", "nome": "Ponto (entrada)", "desc": "Lê o estado de um ponto do IED"},
-    "comando": {"grupo": "Entradas", "nome": "Comando recebido", "desc": "Pulso quando o SAGE (ou a tela) comanda o objeto: Close = ctlVal 1 (on/true), Trip = ctlVal 0 (off/false). Dá para usar só um dos sinais (comandos que só mandam Trip ou só Close). Com este bloco o eco automático do objeto é desligado: a lógica decide o que acontece"},
+    "comando": {"grupo": "Entradas", "nome": "Comando recebido", "desc": "Pulso quando o SAGE (ou a tela) comanda o objeto: Close = ctlVal 1 (on/true), Trip = ctlVal 0 (off/false). Dá para usar só um dos sinais (comandos que só mandam Trip ou só Close). Com este bloco a lógica decide o que acontece; o estado do próprio objeto (ex.: CSWI.Pos) só deixa de acompanhar o comando se alguma lógica escrever nele com um bloco Ponto (saída)"},
     "const": {"grupo": "Entradas", "nome": "Constante", "desc": "Valor fixo (verdadeiro/falso ou número)"},
     "and": {"grupo": "Lógica", "nome": "E (AND)", "desc": "Verdadeiro quando todas as entradas são verdadeiras"},
     "or": {"grupo": "Lógica", "nome": "OU (OR)", "desc": "Verdadeiro quando alguma entrada é verdadeira"},
@@ -173,6 +173,11 @@ class LogicEngine:
     def command_refs(self) -> set:
         return {b["p"].get("controle") for lg in self.logics if lg.cfg["ativa"]
                 for b in lg.blocks.values() if b["tipo"] == "comando"}
+
+    def writes_point(self, path: str) -> bool:
+        """Alguma lógica ativa escreve neste ponto (bloco Ponto (saída))?"""
+        return any(b["tipo"] == "saida" and b["p"].get("ponto") == path
+                   for lg in self.logics if lg.cfg["ativa"] for b in lg.blocks.values())
 
     def command(self, o, ctl, rec: dict):
         self.pending.setdefault(o.key, []).append(ctl)

@@ -3,7 +3,7 @@
 
 Cada DO com atributos de FC=CO (Oper/SBOw/Cancel/SBO) vira um objeto de controle. O ctlModel vem do CF do
 próprio DO. Sem lógica associada, o simulador faz o "eco": o estado (stVal) do mesmo DO passa a valer o comando,
-opcionalmente com tempo de manobra (intermediário). Com uma lógica que usa o bloco Comando, quem decide é a lógica.
+opcionalmente com tempo de manobra (intermediário). Com uma lógica que usa o bloco Comando, quem decide é a lógica; o estado do próprio DO ainda faz eco se nenhuma lógica escreve nele.
 Bloqueios (intertravamento, sincronismo, processo) vêm dos blocos Bloqueio das lógicas.
 """
 from __future__ import annotations
@@ -398,6 +398,11 @@ class ControlService:
         rec.update(resultado="aceito", execucao="lógica" if by_logic else "eco")
         if by_logic:
             self.ied.logic.command(o, ctl, rec)
+            # A lógica que não escreve o estado do próprio objeto (só o XCBR, por exemplo) deixaria o stVal parado:
+            # o próximo comando seria recusado como Position-reached e a terminação nunca sairia. Ele faz eco.
+            if o.point is not None and not self.ied.logic.writes_point(o.point.path):
+                rec["eco_estado"] = True
+                asyncio.get_running_loop().call_soon(self._eco, o, ctl)
         else:  # depois da resposta do Write, como num relé real
             asyncio.get_running_loop().call_soon(self._eco, o, ctl)
         if m in (3, 4):

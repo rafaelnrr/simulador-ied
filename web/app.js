@@ -2119,7 +2119,7 @@ function subLogicas(d) {
         h("li", {}, "Arraste um bloco da lista à esquerda para a área de desenho."),
         h("li", {}, "Ligue a bolinha de saída (direita) à de entrada (esquerda) de outro bloco."),
         h("li", {}, "Clique num fio ou bloco e aperte Delete para remover. Arraste a ponta de um fio já ligado para religar."),
-        h("li", {}, "O bloco Comando recebido assume o objeto: o eco automático desliga e é a lógica que decide o que acontece com o estado."),
+        h("li", {}, "O bloco Comando recebido assume o objeto: é a lógica que decide o que acontece. Se nenhuma lógica escreve no estado do próprio objeto (ex.: CSWI.Pos), ele continua acompanhando o comando, como no eco."),
         h("li", {}, "O bloco Bloqueio recusa o comando (LastApplError com Blocked-by-interlocking) enquanto o sinal estiver ligado."),
         h("li", {}, "Salve para a lógica rodar no simulador; com ela salva, os fios ficam verdes quando o sinal está ligado.")),
         live && cur.id ? liveSummary() : null);

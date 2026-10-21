@@ -261,3 +261,32 @@ def test_bloco_comando_so_trip_e_filtro_por_objeto(sim, tmp_path):
     cmds = sim.h.get(f"/ieds/{iid}/comandos", params={"ref": f"{CTRL}/CSWI2.Pos"}).json()["comandos"]
     assert cmds and all(x["ref"] == f"{CTRL}/CSWI2.Pos" for x in cmds)
     assert cmds[0]["valor_txt"].startswith("TRIP") and cmds[0]["execucao"] == "lógica"
+
+
+def test_logica_sem_saida_no_proprio_objeto_mantem_eco_do_estado(sim, tmp_path):
+    """Lógica que só escreve o XCBR: o CSWI acompanha o comando; sem isso o Close seguinte vinha Position-reached."""
+    ied = sim.create(cid_comandos(tmp_path))
+    iid, port = ied["id"], ied["porta"]
+    cswi = f"{CTRL}/CSWI2$Pos"
+    lg = {"nome": "Só XCBR", "blocos": [
+        {"id": "c", "tipo": "comando", "p": {"controle": cswi}},
+        {"id": "x", "tipo": "saida", "p": {"ponto": f"{CTRL}/XCBR1$ST$Pos"}},
+    ], "fios": [
+        {"de": "c", "saida": "on", "para": "x", "entrada": "on"}, {"de": "c", "saida": "off", "para": "x", "entrada": "off"},
+    ]}
+    assert sim.h.post(f"/ieds/{iid}/logicas", json=lg).status_code == 200
+
+    async def go():
+        c = await connect(port)
+        try:
+            await asyncio.sleep(0.2)
+            for n, (val, pos) in enumerate([(True, 2), (False, 1), (True, 2)], 1):
+                assert (await c.write([on(CTRL, "CSWI2$CO$Pos$Oper")], [oper(val, n)]))[0] is None, val
+                await asyncio.sleep(0.2)
+                assert sim.point(iid, "CSWI2$ST$Pos")["valor"] == pos
+                assert sim.point(iid, "XCBR1$ST$Pos")["valor"] == pos
+        finally:
+            await c.close()
+    run(go())
+    cmds = sim.h.get(f"/ieds/{iid}/comandos", params={"ref": f"{CTRL}/CSWI2.Pos"}).json()["comandos"]
+    assert len(cmds) == 3 and all(x["resultado"] == "aceito" and x["execucao"] == "lógica" for x in cmds)
