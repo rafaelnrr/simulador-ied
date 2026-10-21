@@ -1758,20 +1758,28 @@ function subLogicas(d) {
   const el = h("div", { class: "lg-wrap" });
   const dbg = h("div", { class: "lg-debug" });
   const split = h("div", { class: "lg-split", title: "Arraste para ajustar a altura da tabela (duplo clique: tamanho padrão)" });
-  { const hh = +store("lg.dbg.h"); if (hh > 0) Object.assign(dbg.style, { height: hh + "px", maxHeight: "none" }); }
+  // Altura escolhida no arraste; limitada a 70% da coluna para o desenho não sumir se a janela diminuir.
+  // Chave nova (h2): descarta alturas gravadas por clique sem arraste na versão anterior.
+  const dbgAltura = px => Object.assign(dbg.style, { height: `min(${px}px, 70%)`, maxHeight: "none" });
+  { const hh = +store("lg.dbg.h2"); if (hh > 0) dbgAltura(hh); }
   split.addEventListener("pointerdown", e => {
     e.preventDefault();
     split.setPointerCapture(e.pointerId);
     const y0 = e.clientY, h0 = dbg.getBoundingClientRect().height;
     const max = dbg.parentElement.getBoundingClientRect().height - 120;  // o desenho fica com pelo menos ~120 px
+    let moveu = false;
     split.onpointermove = ev => {
-      const nh = Math.max(60, Math.min(max, h0 - (ev.clientY - y0)));
-      Object.assign(dbg.style, { height: nh + "px", maxHeight: "none" });
+      if (!moveu && Math.abs(ev.clientY - y0) < 4) return;  // clique sem arraste não muda a altura
+      moveu = true;
+      dbgAltura(Math.max(60, Math.min(max, h0 - (ev.clientY - y0))));
       wires();
     };
-    split.onpointerup = () => { split.onpointermove = split.onpointerup = null; store("lg.dbg.h", Math.round(dbg.getBoundingClientRect().height)); };
+    split.onpointerup = () => {
+      split.onpointermove = split.onpointerup = null;
+      if (moveu) store("lg.dbg.h2", Math.round(dbg.getBoundingClientRect().height));
+    };
   });
-  split.addEventListener("dblclick", () => { dbg.style.height = ""; dbg.style.maxHeight = ""; store("lg.dbg.h", ""); wires(); });
+  split.addEventListener("dblclick", () => { dbg.style.height = ""; dbg.style.maxHeight = ""; store("lg.dbg.h2", ""); wires(); });
   let dbgRows = [], dbgOpen = null, dbgTick = 0;
   let catalogo = {}, logicas = [], pontos = {}, controles = [], ctlByKey = {};
   let cur = null;          // lógica em edição (cópia)
