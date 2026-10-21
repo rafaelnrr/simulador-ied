@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulador de IEDs</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23b42318'/%3E%3Cpath d='M9 8h14v4H9zM9 14h14v4H9zM9 20h9v4H9z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div id="simbar" class="simbar">
+    <span class="tag">MODO SIMULAÇÃO</span>
+    <span class="msg" id="simmsg">Os dados enviados por este simulador não vêm de relés reais.</span>
+    <button class="panic" id="panic" title="Para todos os IEDs, fecha as associações e devolve os pontos ao estado anterior (RN-SEG-05)">■ PARADA RÁPIDA</button>
+  </div>
+  <header class="top">
+    <button class="ghost menu-btn" id="menu-btn" title="Mostrar ou recolher o menu" aria-label="Menu">☰</button>
+    <div class="brand">SimIED <span>· Simulador de IEDs IEC 61850</span></div>
+    <div class="clocks">
+      <span><b>LOCAL</b><span id="clk-local">--</span></span>
+      <span><b>UTC</b><span id="clk-utc">--</span></span>
+      <select id="tzpref" title="Horário principal nas tabelas (o outro aparece embaixo) — RN-UI-04">
+        <option value="local">Local primeiro</option>
+        <option value="utc">UTC primeiro</option>
+      </select>
+      <button class="ghost icon-btn" id="tema-btn" type="button" aria-label="Tema"></button>
+      <div class="um hidden" id="um"></div>
+    </div>
+  </header>
+  <div class="shell">
+    <aside class="side" id="side">
+      <nav id="nav">
+      <div class="grp">Simulação</div>
+      <a href="#/" data-r="ieds" title="IEDs simulados"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><span>IEDs</span></a>
+      <a href="#/rede" data-r="rede" title="Rede"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/></svg><span>Rede</span></a>
+      <a href="#/perfis" data-r="perfis" title="Perfis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="18" r="2"/></svg><span>Perfis</span></a>
+      <a href="#/cenarios" data-r="cenarios" title="Cenários"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l14 8-14 8z"/></svg><span>Cenários</span></a>
+      <a href="#/ensaios" data-r="ensaios" title="Ensaios"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg><span>Ensaios</span></a>
+      <div class="grp">CID</div>
+      <a href="#/cidview" data-r="cidview" title="Visualizador de CID"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Visualizador</span></a>
+      <a href="#/cid" data-r="cid" title="Editor de CID"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg><span>Editor</span></a>
+      <div class="grp">SAGE</div>
+      <a href="#/opmsk" data-r="opmsk" title="Gerador e visualizador de OPMSK"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10v4M11 10v4M15 10h2v4h-2z"/></svg><span>OPMSK</span></a>
+      <div class="grp">Sistema</div>
+      <a href="#/config" data-r="config" title="Configuração"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Configuração</span></a>
+      </nav>
+    </aside>
+    <div class="side-backdrop" id="side-backdrop"></div>
+    <main id="app"></main>
+  </div>
+  <div id="toasts"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

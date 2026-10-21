@@ -1,0 +1,32 @@
+{
+  "id": "ingeteam-ef-i15",
+  "nome": "Ingeteam INGEPAC EF (i15)",
+  "versao": 1,
+  "descricao": "Particularidades do i15 (BH06BCM1, IED SE_BAB__H06_BCM1_MD2) conforme o CID de 09/10/2026: RCBs só no LLN0 de controle, atributos Dyn exceto DatSet (Conf), sem criação dinâmica de DataSet, até 16 DataSets e 32 RCBs, gatilhos dchg e qchg (sem dupd), Edição 1. Política por RCB como no relé real: BRCB_ESTADOS_N2/N3 ocupados (o SAGE só usa o BRCB_ESTADOS_SAGE, sem sufixo de instância). period e gi continuam aceitos para integridade e interrogação geral; retire-os de trgops_permitidos para testar o relé sem eles.",
+  "identificacao": {"fabricante": "Ingeteam", "modelo": "INGEPAC EF", "revisao": "a confirmar com captura"},
+  "edicao": 1,
+  "servicos": {"defineNamedVariableList": false, "deleteNamedVariableList": false, "getNamedVariableListAttributes": true},
+  "rcb": {
+    "posicao": "LLN0",
+    "atributos": {"RptID": "Dyn", "DatSet": "Conf", "OptFlds": "Dyn", "BufTm": "Dyn", "TrgOps": "Dyn", "IntgPd": "Dyn"},
+    "indexacao": "se_max_maior_1",
+    "trgops_permitidos": ["dchg", "qchg", "period", "gi"],
+    "max_datasets": 16,
+    "max_rcbs": 32,
+    "buffer_max": 1000,
+    "erro_reservado": 2,
+    "erro_conf": 3,
+    "erro_habilitado": 2,
+    "reasoncode_bits": 6,
+    "politicas": {
+      "BRCB_ESTADOS_N2": {"politica": "ocupado"},
+      "BRCB_ESTADOS_N3": {"politica": "ocupado"},
+      "BRCB_ESTADOS_SAGE": {"politica": "livre", "atributos": {"DatSet": "erro3", "GI": "erro2"}, "instanciar": false},
+      "URCB_MEDIDAS_N2": {"politica": "livre", "atributos": {"DatSet": "erro3", "GI": "erro2"}},
+      "URCB_MEDIDAS_N3": {"politica": "livre", "atributos": {"DatSet": "erro3", "GI": "erro2"}}
+    }
+  },
+  "tempo": {"qualidade_t": "0x8b"},
+  "qualidade": {"inicial": {"validity": "good"}},
+  "limites": {"max_associacoes": 3, "max_pdu": 65000, "max_serv_outstanding": 10, "nesting": 10}
+}

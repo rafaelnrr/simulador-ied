@@ -1,0 +1,13 @@
+# Ambiente / caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Credenciais e dados de execução (repositório é público)
+CREDENCIAIS_ADMIN.txt
+data/
+*.db
+*.db-shm
+*.db-wal
+*.log

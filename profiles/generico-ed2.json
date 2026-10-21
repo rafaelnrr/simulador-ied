@@ -1,0 +1,24 @@
+{
+  "id": "generico-ed2",
+  "nome": "Genérico Edição 2",
+  "versao": 1,
+  "descricao": "Servidor IEC 61850 Ed2 genérico: segue o CID, RCBs indexados (01..max), Owner/ResvTms e reason code de 7 bits.",
+  "identificacao": {"fabricante": "SimIED", "modelo": "Generico Ed2", "revisao": "1.0"},
+  "edicao": 2,
+  "servicos": {"defineNamedVariableList": "cid", "deleteNamedVariableList": "cid", "getNamedVariableListAttributes": true},
+  "rcb": {
+    "posicao": "cid",
+    "atributos": "cid",
+    "indexacao": "cid",
+    "trgops_permitidos": ["dchg", "qchg", "dupd", "period", "gi"],
+    "max_datasets": "cid",
+    "max_rcbs": "cid",
+    "buffer_max": 1000,
+    "erro_reservado": 2,
+    "erro_conf": 3,
+    "erro_habilitado": 2,
+    "reasoncode_bits": 7
+  },
+  "tempo": {"qualidade_t": "0x8b"},
+  "limites": {"max_associacoes": 3, "max_pdu": 65000, "max_serv_outstanding": 10, "nesting": 10}
+}

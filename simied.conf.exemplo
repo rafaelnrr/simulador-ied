@@ -1,0 +1,12 @@
+# Copie para simied.conf e ajuste. Lido pelo iniciar.sh.
+# IP da interface web/API. Não pode ser 0.0.0.0 (RN-NET-08) e não pode ser usado por IEDs:
+# reserve outro IP (alias) para os IEDs.
+# SIMIED_IFACE: usa o IP que o DHCP der a esta interface (acompanha trocas de rede).
+# SIMIED_HOST: IP fixo; se definido, tem prioridade sobre SIMIED_IFACE.
+SIMIED_IFACE=enp0s3
+SIMIED_HOST=
+SIMIED_PORTA=8080
+# LDAP da rede TOCOT (StartTLS com a CA em data/ldap-ca.pem)
+LDAP_URL=ldap://192.168.75.108:389
+LDAP_TLS_NOME=srv-radius-01
+LDAP_BASE=dc=redetocot,dc=local

@@ -1,0 +1,24 @@
+{
+  "id": "referencia-UCDQSA1",
+  "nome": "Referência UCDQSA1 (IED que funciona no SAGE)",
+  "versao": 1,
+  "descricao": "IED de referência com RCB por LN. Todos os itens seguem o CID; preencher com o CID real do UCDQSA1 quando for recebido. Edição a confirmar (segue o CID).",
+  "identificacao": {"fabricante": "Referencia", "modelo": "UCDQSA1", "revisao": "a confirmar"},
+  "edicao": "cid",
+  "servicos": {"defineNamedVariableList": "cid", "deleteNamedVariableList": "cid", "getNamedVariableListAttributes": true},
+  "rcb": {
+    "posicao": "cid",
+    "atributos": "cid",
+    "indexacao": "cid",
+    "trgops_permitidos": ["dchg", "qchg", "dupd", "period", "gi"],
+    "max_datasets": "cid",
+    "max_rcbs": "cid",
+    "buffer_max": 1000,
+    "erro_reservado": 2,
+    "erro_conf": 3,
+    "erro_habilitado": 2,
+    "reasoncode_bits": "edicao"
+  },
+  "tempo": {"qualidade_t": "0x8b"},
+  "limites": {"max_associacoes": 3, "max_pdu": 65000, "max_serv_outstanding": 10, "nesting": 10}
+}

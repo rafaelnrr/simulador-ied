@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CID SINTÉTICO de referência (Edição 2, RCB por LN). Não é o CID real do UCDQSA1. -->
+<SCL xmlns="http://www.iec.ch/61850/2003/SCL" version="2007" revision="B" release="4">
+  <Header id="UCDQSA1" toolID="gen_exemplos.py"/>
+  <Communication>
+    <SubNetwork name="SE_BAB_MMS" type="8-MMS">
+      <ConnectedAP iedName="SE_BAB__UCDQSA1" apName="AP1"><Address><P type="IP">10.237.68.150</P></Address></ConnectedAP>
+    </SubNetwork>
+  </Communication>
+  <IED name="SE_BAB__UCDQSA1" manufacturer="Referencia" type="UCD" configVersion="1">
+    <Services>
+      <DynAssociation max="5"/><GetDirectory/><GetDataObjectDefinition/><DataObjectDirectory/><GetDataSetValue/>
+      <DataSetDirectory/><ConfDataSet max="32" maxAttributes="200"/><DynDataSet max="8"/><ReadWrite/>
+      <ConfReportControl max="64"/><GetCBValues/>
+      <ReportSettings cbName="Conf" datSet="Dyn" rptID="Dyn" optFields="Dyn" bufTime="Dyn" trgOps="Dyn" intgPd="Dyn" resvTms="true" owner="true"/>
+    </Services>
+    <AccessPoint name="AP1">
+      <Server>
+        <Authentication none="true"/>
+        <LDevice inst="LD0">
+          <LN0 lnClass="LLN0" inst="" lnType="LLN0_T"/>
+          <LN lnClass="LPHD" inst="1" lnType="LPHD_T"/>
+          <LN lnClass="GGIO" inst="1" lnType="GGIO_T" desc="Sinais">
+            <DataSet name="DS_GGIO1"><FCDA ldInst="LD0" prefix="" lnClass="GGIO" lnInst="1" doName="Ind1" fc="ST"/><FCDA ldInst="LD0" prefix="" lnClass="GGIO" lnInst="1" doName="Ind2" fc="ST"/><FCDA ldInst="LD0" prefix="" lnClass="GGIO" lnInst="1" doName="Ind3" fc="ST"/><FCDA ldInst="LD0" prefix="" lnClass="GGIO" lnInst="1" doName="Ind4" fc="ST"/></DataSet>
+            <ReportControl name="urcbGGIO1" rptID="SE_BAB__UCDQSA1LD0/urcbGGIO1" datSet="DS_GGIO1" confRev="1" buffered="false" bufTime="0" intgPd="0" indexed="true"><TrgOps dchg="true" qchg="true" dupd="false" period="false" gi="true"/><OptFields seqNum="true" timeStamp="true" dataSet="true" reasonCode="true" dataRef="false" entryID="true" configRef="true" bufOvfl="true"/><RptEnabled max="3"/></ReportControl>
+            <DOI name="Ind3" desc="MOLA"/>
+          </LN>
+          <LN lnClass="XCBR" inst="1" lnType="XCBR_T">
+            <DataSet name="DS_XCBR1"><FCDA ldInst="LD0" prefix="" lnClass="XCBR" lnInst="1" doName="Pos" fc="ST"/></DataSet>
+            <ReportControl name="urcbXCBR1" rptID="SE_BAB__UCDQSA1LD0/urcbXCBR1" datSet="DS_XCBR1" confRev="1" buffered="false" bufTime="0" intgPd="0" indexed="true"><TrgOps dchg="true" qchg="true" dupd="false" period="false" gi="true"/><OptFields seqNum="true" timeStamp="true" dataSet="true" reasonCode="true" dataRef="false" entryID="true" configRef="true" bufOvfl="true"/><RptEnabled max="3"/></ReportControl>
+          </LN>
+        </LDevice>
+      </Server>
+    </AccessPoint>
+  </IED>
+
+  <DataTypeTemplates>
+    <LNodeType id="LLN0_T" lnClass="LLN0">
+      <DO name="Mod" type="INC_Mod"/><DO name="Beh" type="INS_Beh"/><DO name="Health" type="INS_Health"/><DO name="NamPlt" type="LPL_LN0"/>
+    </LNodeType>
+    <LNodeType id="LPHD_T" lnClass="LPHD">
+      <DO name="PhyNam" type="DPL_T"/><DO name="PhyHealth" type="INS_Health"/><DO name="Proxy" type="SPS_T"/>
+    </LNodeType>
+    <LNodeType id="GGIO_T" lnClass="GGIO">
+      <DO name="Mod" type="INC_Mod"/><DO name="Beh" type="INS_Beh"/><DO name="Health" type="INS_Health"/><DO name="NamPlt" type="LPL_T"/>
+      <DO name="Ind1" type="SPS_T"/><DO name="Ind2" type="SPS_T"/><DO name="Ind3" type="SPS_T"/><DO name="Ind4" type="SPS_T"/>
+      <DO name="Ind5" type="SPS_T"/><DO name="Ind6" type="SPS_T"/><DO name="Ind7" type="SPS_T"/><DO name="Ind8" type="SPS_T"/>
+      <DO name="IntIn1" type="INS_T"/>
+    </LNodeType>
+    <LNodeType id="XCBR_T" lnClass="XCBR">
+      <DO name="Mod" type="INC_Mod"/><DO name="Beh" type="INS_Beh"/><DO name="Health" type="INS_Health"/><DO name="NamPlt" type="LPL_T"/>
+      <DO name="Loc" type="SPS_T"/><DO name="OpCnt" type="INS_T"/><DO name="Pos" type="DPC_T"/>
+    </LNodeType>
+    <LNodeType id="PTOC_T" lnClass="PTOC">
+      <DO name="Mod" type="INC_Mod"/><DO name="Beh" type="INS_Beh"/><DO name="Str" type="ACD_T"/><DO name="Op" type="ACT_T"/>
+    </LNodeType>
+    <LNodeType id="MMXU_T" lnClass="MMXU">
+      <DO name="Mod" type="INC_Mod"/><DO name="Beh" type="INS_Beh"/><DO name="TotW" type="MV_T"/><DO name="TotVAr" type="MV_T"/>
+      <DO name="Hz" type="MV_Hz"/><DO name="PhV" type="WYE_T"/><DO name="A" type="WYE_T"/>
+    </LNodeType>
+    <LNodeType id="MMTR_T" lnClass="MMTR">
+      <DO name="Mod" type="INC_Mod"/><DO name="Beh" type="INS_Beh"/><DO name="TotWh" type="BCR_T"/>
+    </LNodeType>
+    <DOType id="INC_Mod" cdc="INC">
+      <DA name="stVal" fc="ST" bType="Enum" type="Mod" dchg="true"><Val>on</Val></DA>
+      <DA name="q" fc="ST" bType="Quality" qchg="true"/><DA name="t" fc="ST" bType="Timestamp"/>
+      <DA name="ctlModel" fc="CF" bType="Enum" type="ctlModel"><Val>status-only</Val></DA>
+    </DOType>
+    <DOType id="INS_Beh" cdc="INS">
+      <DA name="stVal" fc="ST" bType="Enum" type="Beh" dchg="true"><Val>on</Val></DA>
+      <DA name="q" fc="ST" bType="Quality" qchg="true"/><DA name="t" fc="ST" bType="Timestamp"/>
+    </DOType>
+    <DOType id="INS_Health" cdc="INS">
+      <DA name="stVal" fc="ST" bType="Enum" type="Health" dchg="true"><Val>Ok</Val></DA>
+      <DA name="q" fc="ST" bType="Quality" qchg="true"/><DA name="t" fc="ST" bType="Timestamp"/>
+    </DOType>
+    <DOType id="INS_T" cdc="INS">
+      <DA name="stVal" fc="ST" bType="INT32" dchg="true"/><DA name="q" fc="ST" bType="Quality" qchg="true"/>
+      <DA name="t" fc="ST" bType="Timestamp"/>
+    </DOType>
+    <DOType id="LPL_LN0" cdc="LPL">
+      <DA name="vendor" fc="DC" bType="VisString255"/><DA name="swRev" fc="DC" bType="VisString255"/>
+      <DA name="d" fc="DC" bType="VisString255"/><DA name="configRev" fc="DC" bType="VisString255"/>
+      <DA name="ldNs" fc="EX" bType="VisString255"><Val>IEC 61850-7-4:2003</Val></DA>
+    </DOType>
+    <DOType id="LPL_T" cdc="LPL">
+      <DA name="vendor" fc="DC" bType="VisString255"/><DA name="swRev" fc="DC" bType="VisString255"/>
+      <DA name="d" fc="DC" bType="VisString255"/>
+    </DOType>
+    <DOType id="DPL_T" cdc="DPL">
+      <DA name="vendor" fc="DC" bType="VisString255"/><DA name="hwRev" fc="DC" bType="VisString255"/>
+      <DA name="serNum" fc="DC" bType="VisString255"/><DA name="model" fc="DC" bType="VisString255"/>
+    </DOType>
+    <DOType id="SPS_T" cdc="SPS">
+      <DA name="stVal" fc="ST" bType="BOOLEAN" dchg="true"/><DA name="q" fc="ST" bType="Quality" qchg="true"/>
+      <DA name="t" fc="ST" bType="Timestamp"/><DA name="d" fc="DC" bType="VisString255"/>
+    </DOType>
+    <DOType id="DPC_T" cdc="DPC">
+      <DA name="stVal" fc="ST" bType="Dbpos" dchg="true"><Val>off</Val></DA>
+      <DA name="q" fc="ST" bType="Quality" qchg="true"/><DA name="t" fc="ST" bType="Timestamp"/>
+      <DA name="ctlModel" fc="CF" bType="Enum" type="ctlModel"><Val>status-only</Val></DA>
+    </DOType>
+    <DOType id="ACT_T" cdc="ACT">
+      <DA name="general" fc="ST" bType="BOOLEAN" dchg="true"/><DA name="q" fc="ST" bType="Quality" qchg="true"/>
+      <DA name="t" fc="ST" bType="Timestamp"/>
+    </DOType>
+    <DOType id="ACD_T" cdc="ACD">
+      <DA name="general" fc="ST" bType="BOOLEAN" dchg="true"/><DA name="dirGeneral" fc="ST" bType="Enum" type="dir" dchg="true"/>
+      <DA name="q" fc="ST" bType="Quality" qchg="true"/><DA name="t" fc="ST" bType="Timestamp"/>
+    </DOType>
+    <DOType id="MV_T" cdc="MV">
+      <DA name="mag" fc="MX" bType="Struct" type="AnalogueValue_T" dchg="true"/>
+      <DA name="q" fc="MX" bType="Quality" qchg="true"/><DA name="t" fc="MX" bType="Timestamp"/>
+      <DA name="units" fc="CF" bType="Struct" type="Unit_W"/><DA name="db" fc="CF" bType="INT32U"><Val>0</Val></DA>
+    </DOType>
+    <DOType id="MV_Hz" cdc="MV">
+      <DA name="mag" fc="MX" bType="Struct" type="AnalogueValue_T" dchg="true"/>
+      <DA name="q" fc="MX" bType="Quality" qchg="true"/><DA name="t" fc="MX" bType="Timestamp"/>
+      <DA name="units" fc="CF" bType="Struct" type="Unit_Hz"/><DA name="db" fc="CF" bType="INT32U"><Val>100</Val></DA>
+      <DA name="zeroDb" fc="CF" bType="INT32U"><Val>0</Val></DA>
+      <DA name="rangeC" fc="CF" bType="Struct" type="RangeConfig_Hz"/>
+    </DOType>
+    <DOType id="CMV_T" cdc="CMV">
+      <DA name="cVal" fc="MX" bType="Struct" type="Vector_T" dchg="true"/>
+      <DA name="q" fc="MX" bType="Quality" qchg="true"/><DA name="t" fc="MX" bType="Timestamp"/>
+      <DA name="db" fc="CF" bType="INT32U"><Val>0</Val></DA>
+    </DOType>
+    <DOType id="WYE_T" cdc="WYE">
+      <SDO name="phsA" type="CMV_T"/><SDO name="phsB" type="CMV_T"/><SDO name="phsC" type="CMV_T"/>
+    </DOType>
+    <DOType id="BCR_T" cdc="BCR">
+      <DA name="actVal" fc="ST" bType="INT64" dchg="true"/><DA name="q" fc="ST" bType="Quality" qchg="true"/>
+      <DA name="t" fc="ST" bType="Timestamp"/><DA name="pulsQty" fc="CF" bType="FLOAT32"><Val>1</Val></DA>
+    </DOType>
+    <DAType id="AnalogueValue_T"><BDA name="f" bType="FLOAT32"/></DAType>
+    <DAType id="Vector_T"><BDA name="mag" bType="Struct" type="AnalogueValue_T"/><BDA name="ang" bType="Struct" type="AnalogueValue_T"/></DAType>
+    <DAType id="Unit_W"><BDA name="SIUnit" bType="Enum" type="SIUnit"><Val>W</Val></BDA><BDA name="multiplier" bType="Enum" type="multiplier"><Val>M</Val></BDA></DAType>
+    <DAType id="Unit_Hz"><BDA name="SIUnit" bType="Enum" type="SIUnit"><Val>Hz</Val></BDA><BDA name="multiplier" bType="Enum" type="multiplier"><Val></Val></BDA></DAType>
+    <DAType id="RangeConfig_Hz">
+      <BDA name="hhLim" bType="Struct" type="AnalogueValue_T"/><BDA name="hLim" bType="Struct" type="AnalogueValue_T"/>
+      <BDA name="lLim" bType="Struct" type="AnalogueValue_T"/><BDA name="llLim" bType="Struct" type="AnalogueValue_T"/>
+      <BDA name="min" bType="Struct" type="AnalogueValue_T"/>
+      <BDA name="max" bType="Struct" type="AnalogueValue_T"/>
+    </DAType>
+    <EnumType id="Mod"><EnumVal ord="1">on</EnumVal><EnumVal ord="2">blocked</EnumVal><EnumVal ord="3">test</EnumVal><EnumVal ord="4">test/blocked</EnumVal><EnumVal ord="5">off</EnumVal></EnumType>
+    <EnumType id="Beh"><EnumVal ord="1">on</EnumVal><EnumVal ord="2">blocked</EnumVal><EnumVal ord="3">test</EnumVal><EnumVal ord="4">test/blocked</EnumVal><EnumVal ord="5">off</EnumVal></EnumType>
+    <EnumType id="Health"><EnumVal ord="1">Ok</EnumVal><EnumVal ord="2">Warning</EnumVal><EnumVal ord="3">Alarm</EnumVal></EnumType>
+    <EnumType id="ctlModel"><EnumVal ord="0">status-only</EnumVal><EnumVal ord="1">direct-with-normal-security</EnumVal><EnumVal ord="2">sbo-with-normal-security</EnumVal><EnumVal ord="3">direct-with-enhanced-security</EnumVal><EnumVal ord="4">sbo-with-enhanced-security</EnumVal></EnumType>
+    <EnumType id="dir"><EnumVal ord="0">unknown</EnumVal><EnumVal ord="1">forward</EnumVal><EnumVal ord="2">backward</EnumVal><EnumVal ord="3">both</EnumVal></EnumType>
+    <EnumType id="SIUnit"><EnumVal ord="1"></EnumVal><EnumVal ord="5">A</EnumVal><EnumVal ord="9">deg</EnumVal><EnumVal ord="29">V</EnumVal><EnumVal ord="33">Hz</EnumVal><EnumVal ord="38">W</EnumVal><EnumVal ord="63">VAr</EnumVal><EnumVal ord="72">Wh</EnumVal></EnumType>
+    <EnumType id="multiplier"><EnumVal ord="-3">m</EnumVal><EnumVal ord="0"></EnumVal><EnumVal ord="3">k</EnumVal><EnumVal ord="6">M</EnumVal></EnumType>
+  </DataTypeTemplates>
+</SCL>
