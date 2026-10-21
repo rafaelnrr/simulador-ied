@@ -1,6 +1,6 @@
 # Instalação do SimIED em outra máquina Ubuntu
 
-Requisitos: Ubuntu com Python 3.10 ou mais novo, acesso à rede do LDAP (192.168.75.108:389).
+Requisitos: Ubuntu com Python 3.10 ou mais novo.
 
 ```bash
 tar xzf simied-*.tar.gz
@@ -16,17 +16,14 @@ Antes de ligar (ou depois, com `sudo systemctl restart simied`), ajuste `simied.
   Não pode ser `0.0.0.0` e **não pode ser usado por IEDs** (RN-NET-08). Para os IEDs, reserve outro IP
   na mesma placa: `sudo ip addr add 192.168.74.X/23 dev <interface>` (para ficar permanente, coloque no netplan).
 
-Acesse `http://<SIMIED_HOST>:8080/` e entre com o usuário de rede.
+Crie o usuário administrador (único usuário desta versão; a senha é pedida duas vezes):
 
-## Perfis (grupos no LDAP, `ou=Grupos,dc=redetocot,dc=local`)
+```bash
+.venv/bin/python -m simied usuario admin --papel administrador
+```
 
-| Grupo | Perfil |
-|---|---|
-| `simied_admin` | administrador — altera toda a configuração |
-| `simied_operacao` | operação — pontos, falhas, relógio, cenários, ensaios, iniciar/parar |
-| `simied_leitura` | somente leitura |
-
-Para dar acesso, inclua o login como `memberUid` no grupo. `data/simied-grupos.ldif` recria os grupos, se preciso.
+Acesse `http://<SIMIED_HOST>:8080/` e entre com esse usuário. Para trocar a senha, rode o mesmo comando de novo
+ou use **Configuração e minha conta** na interface.
 
 ## Sem o serviço systemd
 

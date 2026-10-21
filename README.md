@@ -6,8 +6,8 @@ DataSets, RCBs (BRCB/URCB), serviço de controle e as particularidades do fabric
 **testar o SAGE** (e outros SCADAs) sem depender do relé físico: subir pontos, injetar eventos e falhas de
 comunicação, reproduzir recusas de RCB, simular o relógio errado e registrar ensaios.
 
-Tudo é operado por uma **interface web** (e por uma **API REST** equivalente), com login local ou pelo LDAP da
-rede.
+Tudo é operado por uma **interface web** (e por uma **API REST** equivalente), protegida por login com um
+único usuário administrador.
 
 > ⚠️ **Os dados enviados pelo simulador não vêm de relés reais.** Um SCADA que apontar para o IP de um IED
 > simulado recebe dados **simulados**, e os eventos injetados aparecem para o operador e entram nos arquivos
@@ -23,7 +23,7 @@ rede.
 2. [Requisitos](#requisitos)
 3. [Instalação](#instalação)
 4. [Configuração (`simied.conf`)](#configuração-simiedconf)
-5. [Usuários, perfis de acesso e LDAP](#usuários-perfis-de-acesso-e-ldap)
+5. [Usuário administrador](#usuário-administrador)
 6. [Rede: IP da interface web e IPs dos IEDs](#rede-ip-da-interface-web-e-ips-dos-ieds)
 7. [Primeiros passos](#primeiros-passos)
 8. [Manual da interface](#manual-da-interface)
@@ -45,7 +45,8 @@ rede.
 12. [Testes automáticos](#testes-automáticos)
 13. [Estrutura do projeto](#estrutura-do-projeto)
 14. [Solução de problemas](#solução-de-problemas)
-15. [Glossário](#glossário)
+15. [Bibliotecas e créditos](#bibliotecas-e-créditos)
+16. [Glossário](#glossário)
 
 ---
 
@@ -79,7 +80,7 @@ rede.
   arquivos e exportação em CSV.
 - **Gerador e decodificador de OPMSK** do SAGE.
 - **Registro MMS e exportação PCAP** do tráfego de cada IED.
-- **Usuários locais e LDAP**, com três papéis: leitura, operação e administrador.
+- **Login com usuário administrador** local.
 - **Backup** em ZIP pela própria interface.
 
 ---
@@ -92,11 +93,9 @@ rede.
 | Python | 3.10 ou mais novo (`python3-venv`) |
 | Rede | Uma placa com o IP da interface web e um IP adicional (alias) para cada IED |
 | Permissões | Porta 102 exige `CAP_NET_BIND_SERVICE`. Criar IPs pela tela Rede exige `CAP_NET_ADMIN`. O monitor de conexões exige `CAP_NET_RAW`. O serviço systemd já concede as três. |
-| LDAP (opcional) | Acesso a `192.168.75.108:389` (rede TOCOT), com StartTLS e a CA em `data/ldap-ca.pem` |
 | Navegador | Qualquer navegador moderno (Chrome, Firefox, Edge) |
 
-Dependências Python (`requirements.txt`): `fastapi`, `uvicorn[standard]`, `python-multipart`, `ldap3` e
-`openpyxl`. Os testes usam também `httpx` e `pytest`.
+Dependências Python: veja [Bibliotecas e créditos](#bibliotecas-e-créditos).
 
 ---
 
@@ -150,10 +149,9 @@ vale para todo uso desse Python):
 sudo setcap cap_net_bind_service,cap_net_admin,cap_net_raw=+ep "$(readlink -f .venv/bin/python)"
 ```
 
-### 4. Criar o primeiro usuário
+### 4. Criar o usuário administrador
 
-Fora de `127.0.0.1`, o login é obrigatório. Se o LDAP não estiver configurado, crie um usuário local antes de
-subir:
+Fora de `127.0.0.1`, o login é obrigatório. Crie o usuário administrador antes de subir:
 
 ```bash
 .venv/bin/python -m simied usuario admin --papel administrador
@@ -172,7 +170,7 @@ sudo ufw allow 102/tcp    # MMS dos IEDs
 
 ### 6. Acessar
 
-Abra `http://<IP-da-interface-web>:8080/` no navegador e entre com o usuário local ou de rede.
+Abra `http://<IP-da-interface-web>:8080/` no navegador e entre com o usuário administrador.
 
 ---
 
@@ -186,10 +184,6 @@ têm prioridade sobre o arquivo.
 | `SIMIED_IFACE` | `enp0s3` | Interface com DHCP. A interface web escuta no IP que o DHCP der a ela. Rodando como serviço, se o IP mudar, o simulador reinicia sozinho no IP novo (confere a cada 10 s). |
 | `SIMIED_HOST` | `192.168.74.10` | IP fixo da interface web. Se definido, tem prioridade sobre `SIMIED_IFACE`. |
 | `SIMIED_PORTA` | `8080` | Porta da interface web e da API. |
-| `LDAP_URL` | `ldap://192.168.75.108:389` | Servidor LDAP. Vazio = só usuários locais. |
-| `LDAP_TLS_NOME` | `srv-radius-01` | Nome esperado no certificado do LDAP, quando difere do host da URL. |
-| `LDAP_BASE` | `dc=redetocot,dc=local` | Base DN do diretório. |
-| `LDAP_CA` | `data/ldap-ca.pem` | CA do servidor LDAP (padrão `data/ldap-ca.pem`). |
 
 Regras importantes:
 
@@ -198,47 +192,25 @@ Regras importantes:
 - Para descobrir as interfaces e IPs da máquina: `ip -br addr`.
 - Depois de mudar o arquivo, reinicie: `sudo systemctl restart simied`.
 
-Com o LDAP ligado, o `iniciar.sh` usa StartTLS e mapeia os grupos `simied_admin`, `simied_operacao` e
-`simied_leitura` (veja a próxima seção).
-
 ---
 
-## Usuários, perfis de acesso e LDAP
+## Usuário administrador
 
-### Papéis
+Esta versão usa **um único usuário, com papel administrador**, guardado no banco local (`data/simied.db`, senha
+com hash). Ele tem acesso a todas as funções: operar os IEDs (iniciar e parar, pontos, falhas, relógio, cenários,
+ensaios, subida de pontos, comandos de teste) e alterar a configuração (criar e excluir IEDs, perfis, lógicas,
+editar e aplicar CIDs, preferências do servidor e backup).
 
-| Papel | O que pode fazer |
-|---|---|
-| **leitura** | Só consulta: vê IEDs, pontos, reports, registros e CIDs. Pode trocar a própria senha. |
-| **operação** | Opera os IEDs: inicia e para, muda pontos, falhas, relógio, cenários, ensaios, subida de pontos, comandos de teste e políticas de RCB. |
-| **administrador** | Tudo o que a operação faz e também altera a configuração: cria e exclui IEDs, perfis, lógicas, edita e aplica CIDs, gerencia usuários, preferências do servidor e backup. |
+- **Criar** (ou redefinir a senha), com o serviço parado ou não:
 
-Mudar o papel ou a senha de um usuário, ou removê-lo, encerra os logins abertos dele. O último administrador
-não pode ser rebaixado nem removido, e ninguém remove o próprio usuário.
+  ```bash
+  .venv/bin/python -m simied usuario admin --papel administrador
+  ```
 
-### Usuários locais
-
-- Criar ou alterar pela linha de comando:
-  `.venv/bin/python -m simied usuario <nome> --papel leitura|operacao|administrador`
-- Ou pela tela **Configuração › Usuários** (administrador).
-- Cada usuário troca a própria senha em **Configuração e minha conta** (menu do usuário, no canto superior
-  direito).
-
-Usuários locais têm prioridade: se o nome existe no banco local, a senha é conferida localmente.
-
-### LDAP (rede TOCOT)
-
-Se o nome não existir localmente e o LDAP estiver configurado, a senha é validada por *bind* no diretório e o
-papel vem dos grupos (`posixGroup` ou `groupOfNames`, procurados pelo `cn`) em `ou=Grupos,dc=redetocot,dc=local`:
-
-| Grupo | Papel |
-|---|---|
-| `simied_admin` | administrador |
-| `simied_operacao` | operação |
-| `simied_leitura` | leitura |
-
-Para dar acesso, inclua o login como `memberUid` no grupo. O arquivo `data/simied-grupos.ldif` recria os grupos,
-se preciso. Sem TLS (sem `ldaps://` nem StartTLS), o simulador avisa no log que as senhas trafegam em claro.
+  A senha (mínimo de 8 caracteres) é pedida duas vezes. Rodar o comando de novo com o mesmo nome troca a senha.
+- **Trocar a senha pela interface**: menu do usuário (canto superior direito) › **Configuração e minha conta**.
+- Trocar a senha encerra os logins abertos.
+- Guarde a senha num cofre de senhas, não num arquivo dentro da pasta do projeto.
 
 ---
 
@@ -703,13 +675,12 @@ Gerador e decodificador da máscara de opções (**OPMSK**) que o SAGE usa para 
 
 ### Configuração
 
-Só para o administrador, exceto a troca da própria senha.
+Acessível ao usuário administrador.
 
 - **Padrões do servidor**: valores para um novo IED (perfil `auto` ou fixo, porta, máximo de associações),
   OPMSK padrão do SAGE e visão inicial do editor. São gravados em `data/config.json`.
-- **Usuários**: criar, mudar papel e senha, remover.
-- **Minha conta**: trocar a própria senha (todos os papéis, só usuários locais).
-- **Sistema**: versão, endereço, pasta de dados, login/LDAP, IEDs e uso de disco.
+- **Minha conta**: trocar a senha do administrador.
+- **Sistema**: versão, endereço, pasta de dados, login, IEDs e uso de disco.
 - **Backup**: baixa um ZIP com o banco (cópia consistente), CIDs, perfis, rascunhos do editor e `config.json`.
 
 ---
@@ -769,7 +740,7 @@ A referência detalhada da política de RCB, do editor de CID, dos comandos/lóg
 
 ```
 python -m simied [--dados DIR] serve [opções]     # inicia (padrão)
-python -m simied [--dados DIR] usuario NOME [--papel leitura|operacao|administrador]
+python -m simied [--dados DIR] usuario NOME --papel administrador
 ```
 
 | Opção | Padrão | Descrição |
@@ -779,13 +750,6 @@ python -m simied [--dados DIR] usuario NOME [--papel leitura|operacao|administra
 | `--admin-port` | `8080` | Porta da interface web/API |
 | `--teste-local` | — | Permite IEDs em 127.0.0.1 e mostra o loopback nas interfaces |
 | `--log` | `info` | Nível de log (`debug`, `info`, `warning`…) |
-| `--ldap-url` | — | `ldaps://servidor:636` ou `ldap://servidor:389` com `--ldap-starttls` |
-| `--ldap-base` | — | Base DN (obrigatório com `--ldap-url`) |
-| `--ldap-usuarios-dn` / `--ldap-grupos-dn` | `ou=Usuarios,<base>` / `ou=Grupos,<base>` | Onde procurar usuários e grupos |
-| `--ldap-grupo-admin` / `--ldap-grupo-operacao` / `--ldap-grupo-leitura` | — | `cn` dos grupos de cada papel (podem ser repetidos) |
-| `--ldap-starttls` | — | Usa StartTLS |
-| `--ldap-ca` | — | PEM da CA do LDAP |
-| `--ldap-tls-nome` | — | Nome esperado no certificado |
 
 Exemplo para testar na própria máquina, sem login:
 
@@ -805,13 +769,11 @@ Tudo o que muda em execução fica em `data/` (fora do controle de versão):
 
 | Caminho | Conteúdo |
 |---|---|
-| `data/simied.db` (+ `-wal`, `-shm`) | Banco SQLite: IEDs e sua configuração, estado dos pontos, usuários, cenários, ensaios, históricos |
+| `data/simied.db` (+ `-wal`, `-shm`) | Banco SQLite: IEDs e sua configuração, estado dos pontos, usuário administrador, cenários, ensaios, históricos |
 | `data/cids/` | CIDs importados |
 | `data/cid_editor/` | Rascunhos do editor de CID |
 | `data/profiles/` | Perfis criados pelo usuário |
 | `data/config.json` | Padrões do servidor (tela Configuração) |
-| `data/ldap-ca.pem` | CA do servidor LDAP |
-| `data/simied-grupos.ldif` | LDIF para recriar os grupos no LDAP |
 | `data/simied.log` | Log |
 
 **Backup**: use **Configuração › Backup** (ou `GET /api/v1/backup`). O ZIP traz uma cópia consistente do
@@ -819,7 +781,7 @@ banco, os CIDs, os perfis, os rascunhos e o `config.json`. Para restaurar, pare 
 `data/` e suba de novo.
 
 > O repositório git guarda **só o código**. A pasta `data/`, o `.venv/` e o arquivo `CREDENCIAIS_ADMIN.txt`
-> estão no `.gitignore` e não devem ser publicados, porque contêm usuários, senhas e dados de operação.
+> estão no `.gitignore` e não devem ser publicados, porque contêm o usuário, a senha (hash) e dados de operação.
 
 ---
 
@@ -830,7 +792,7 @@ banco, os CIDs, os perfis, os rascunhos e o `config.json`. Para restaurar, pare 
 ```
 
 Os testes sobem o simulador real num subprocesso (loopback, `--teste-local`) e conversam com ele por um cliente
-MMS próprio. Cobrem comandos, editor de CID, ensaios, LDAP, monitor de rede, papéis, política de RCB, sistema,
+MMS próprio. Cobrem comandos, editor de CID, ensaios, monitor de rede, permissões, política de RCB, sistema,
 subida de pontos e testes de unidade.
 
 ---
@@ -858,8 +820,8 @@ sim_ied/
 │   ├── pcap.py             # exportação PCAP
 │   ├── cidedit.py          # editor/visualizador de CID
 │   ├── profiles.py         # perfis de IED
-│   ├── auth.py             # usuários locais e LDAP
-│   ├── sistema.py          # configuração, usuários, sistema, backup
+│   ├── auth.py             # login e sessões
+│   ├── sistema.py          # configuração, conta, sistema, backup
 │   ├── storage.py          # SQLite
 │   ├── ber.py              # codificação BER
 │   └── mms/                # pilha ISO/MMS: iso.py, pdu.py, types.py, server.py, client.py
@@ -882,7 +844,7 @@ sim_ied/
 
 | Sintoma | Causa provável e solução |
 |---|---|
-| `RN-UI-06: fora de 127.0.0.1 a autenticação é obrigatória` | Não há usuário nem LDAP. Crie um usuário: `.venv/bin/python -m simied usuario admin --papel administrador`. |
+| `RN-UI-06: fora de 127.0.0.1 a autenticação é obrigatória` | O usuário administrador ainda não foi criado. Crie-o: `.venv/bin/python -m simied usuario admin --papel administrador`. |
 | `RN-NET-08: a administração não pode escutar em todas as interfaces` | `SIMIED_HOST` está como `0.0.0.0`. Use o IP de gerenciamento. |
 | `IP de administração X não existe nesta máquina` | O IP de `SIMIED_HOST` não está em nenhuma placa. Confira com `ip -br addr`. |
 | `interface enp0s3 sem IP do DHCP` | A interface de `SIMIED_IFACE` não recebeu IP em 60 s. Confira o nome da interface e o DHCP, ou use `SIMIED_HOST`. |
@@ -893,11 +855,55 @@ sim_ied/
 | O SAGE associa mas não recebe eventos | Confira em **RCBs e DataSets** se o RCB foi habilitado (RptEna) e se não há recusas por política. Confira se o ponto está num DataSet, os TrgOps, o OPMSK e se há falha ativa (descarte, atraso). |
 | Escrita de RCB recusada com erro 2/3 | É a política do RCB (perfil ou IED) ou a falha "Erro fixo na escrita". Veja o histórico de recusas, que traz o motivo. |
 | Não consigo mudar um ponto | Ele está em modo espelhado: passe para forçado. Ou o CDC não é tratado (somente leitura). |
-| Login LDAP falha | Confira `LDAP_URL`, a CA em `data/ldap-ca.pem`, `LDAP_TLS_NOME` e se o usuário é `memberUid` de um dos grupos `simied_*`. |
+| Esqueci a senha do administrador | Rode de novo `.venv/bin/python -m simied usuario admin --papel administrador` e informe a senha nova. |
 | O IP do IED sumiu após o reboot | Alias criado com `ip addr add` não é permanente. Coloque-o no netplan. |
 
 Logs: `journalctl -u simied -f` (serviço) ou a saída do terminal. Use `--log debug` para mais detalhes. O
 registro MMS de cada IED fica em **Reports e histórico › Registro MMS**.
+
+---
+
+## Bibliotecas e créditos
+
+### Código próprio
+
+As partes centrais do simulador foram escritas neste projeto, **sem bibliotecas de protocolo de terceiros**
+(não usa libiec61850 nem similares):
+
+- pilha ISO/MMS completa: TPKT (RFC 1006), COTP (ISO 8073 classe 0), sessão (ISO 8327), apresentação
+  (ISO 8823), ACSE (ISO 8650) e MMS (ISO 9506), com codificação BER (`simied/mms/`, `simied/ber.py`);
+- leitor SCL Edição 1 e 2 (`simied/scl.py`), motor de reports BRCB/URCB (`simied/reports.py`), serviço de
+  controle, lógicas, editor de CID e exportação PCAP;
+- interface web em **JavaScript puro**, sem framework e sem CDN: funciona numa rede isolada, sem acesso à
+  internet.
+
+### Dependências Python
+
+| Biblioteca | Uso no SimIED | Versão testada | Licença |
+|---|---|---|---|
+| [FastAPI](https://fastapi.tiangolo.com/) (sobre [Starlette](https://www.starlette.io/) e [Pydantic](https://docs.pydantic.dev/)) | API REST, WebSocket de eventos e entrega da interface web | 0.143.3 | MIT |
+| [Uvicorn](https://www.uvicorn.org/) | servidor HTTP/ASGI | 0.54.0 | BSD-3-Clause |
+| [python-multipart](https://github.com/Kludex/python-multipart) | upload de CID, CSV e planilhas | 0.0.32 | Apache-2.0 |
+| [openpyxl](https://openpyxl.readthedocs.io/) | planilhas `.xlsx` da subida de pontos (modelo, importação e resultado) | 3.1.5 | MIT |
+| [pytest](https://pytest.org/) | testes automáticos (só desenvolvimento) | 9.1.1 | MIT |
+| [HTTPX](https://www.python-httpx.org/) | cliente HTTP dos testes (só desenvolvimento) | 0.28.1 | BSD-3-Clause |
+
+As versões testadas são as do ambiente em uso, com **Python 3.14**. O `requirements.txt` fixa só as versões
+mínimas.
+
+O restante vem da biblioteca padrão do Python: `asyncio` (servidor MMS e tarefas), `sqlite3` (banco),
+`xml.etree` (SCL), `hashlib`/`hmac` (senhas), `socket` (captura de pacotes do monitor de rede) e `csv`.
+
+### Ferramentas do sistema
+
+- `ip` (iproute2): lista interfaces e cria IPs secundários;
+- `systemd`: serviço `simied`;
+- `setcap` (libcap): permissões de rede quando roda sem o serviço.
+
+### Normas de referência
+
+IEC 61850-6 (SCL), IEC 61850-7-2 (ACSI: reports e controle), IEC 61850-7-3 (CDCs), IEC 61850-8-1 (mapeamento
+em MMS) e ISO 9506 (MMS).
 
 ---
 
