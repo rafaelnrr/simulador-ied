@@ -440,6 +440,8 @@ A mudança de política vale já para as próximas escritas, sem reiniciar o IED
 
 Objetos de controle do IED: cada DO com atributos FC=CO (`Oper`, `SBOw`, `Cancel`, `SBO`).
 
+- **Busca** por caminho, descrição ou endereço MMS (várias palavras: todas precisam aparecer), com a contagem de
+  objetos encontrados. A busca fica guardada no navegador.
 - Mostra o ctlModel (lido do CF do DO), os serviços disponíveis, o estado, a seleção, os bloqueios ativos e se
   o objeto está em **eco** ou é controlado por **lógica**.
 - **Eco** (sem lógica): o `stVal` do próprio DO passa a valer o comando, opcionalmente com **tempo de manobra**

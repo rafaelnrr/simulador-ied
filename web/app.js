@@ -1588,15 +1588,30 @@ function subComandos(d) {
   let paused = false;
   const pauseChk = chk("pausar atualização ao vivo", false);
   pauseChk.input.addEventListener("change", () => { paused = pauseChk.input.checked; });
+  const q = h("input", { placeholder: "Buscar por caminho, descrição ou endereço MMS", style: { width: "320px" }, value: store("q.ctl") || "" });
+  const info = h("span", { class: "muted small" });
+  let ctlData = null;
 
   async function loadCtl() {
-    let r;
-    try { r = await api("GET", `/ieds/${id}/controles`); } catch (e) { put(ctlBox, h("div", { class: "alert bad" }, e.message)); return; }
+    try { ctlData = await api("GET", `/ieds/${id}/controles`); } catch (e) { put(ctlBox, h("div", { class: "alert bad" }, e.message)); return; }
+    renderCtl();
+  }
+
+  // Filtro local, como em Sinais digitais/analógicos; várias palavras = todas precisam aparecer
+  function renderCtl() {
+    const r = ctlData;
+    if (!r) return;
+    store("q.ctl", q.value);
+    const termos = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+    const casa = c => { const t = `${c.ref} ${c.desc || ""} ${c.mms || ""}`.toLowerCase(); return termos.every(x => t.includes(x)); };
+    const vis = r.controles.filter(casa);
+    info.textContent = r.controles.length ? `${vis.length} de ${r.controles.length} objeto(s).` : "";
     if (!r.controles.length) {
       put(ctlBox, h("p", { class: "muted" }, "Este CID não tem objetos controláveis (DOs com Oper, SBOw ou SBO em FC=CO). Comandos do SAGE em outros pontos são recusados e aparecem na aba Reports e histórico › Serviços MMS."));
       return;
     }
-    const cmd = r.controles.filter(c => c.ctlModel_n > 0), so = r.controles.filter(c => c.ctlModel_n === 0);
+    if (!vis.length) { put(ctlBox, h("div", { class: "empty" }, "Nenhum objeto de controle com essa busca.")); return; }
+    const cmd = vis.filter(c => c.ctlModel_n > 0), so = vis.filter(c => c.ctlModel_n === 0);
     const objCell = c => h("td", {}, h("div", { class: "path" }, c.ref.split("/").slice(1).join("/")), h("div", { class: "desc" }, c.desc || ""),
       h("div", { class: "mono small muted", title: "Endereço MMS do Operate (domínio/item)" }, c.mms));
     put(ctlBox, cmd.length ? h("div", { class: "tablewrap" }, h("table", {},
@@ -1622,7 +1637,7 @@ function subComandos(d) {
         h("td", { class: "nowrap right" },
           canOperate() ? ctlButtons(c).map(([t, v]) => h("button", { class: "sm" + (v ? " danger" : ""), title: "Comando de teste pela tela: passa pelas mesmas verificações de um comando do SAGE", onclick: () => testar(c, v, t) }, t)) : null,
           isAdmin() ? h("button", { class: "sm ghost", title: "Ajustes do eco e da terminação", onclick: () => ajustes(c) }, "⚙") : null))))))
-      : h("p", { class: "muted" }, "Nenhum objeto deste CID aceita comando: todos estão com ctlModel status-only."),
+      : h("p", { class: "muted" }, termos.length ? "Nenhum objeto que aceita comando com essa busca." : "Nenhum objeto deste CID aceita comando: todos estão com ctlModel status-only."),
       so.length ? h("details", { style: { marginTop: "12px" } },
         h("summary", { class: "small" }, `Somente estado (ctlModel status-only): ${so.length} objeto(s) — têm atributos de controle no CID, mas recusam qualquer comando`),
         h("div", { class: "tablewrap" }, h("table", {},
@@ -1698,7 +1713,7 @@ function subComandos(d) {
   }
 
   put(el,
-    h("div", { class: "card" }, h("h2", {}, "Objetos de controle"), ctlBox,
+    h("div", { class: "card" }, h("h2", {}, "Objetos de controle"), h("div", { class: "row", style: { marginBottom: "8px" } }, q, info), ctlBox,
       h("p", { class: "muted small" }, "Configuração no SAGE: KCONV do ponto de controle físico (CGF) conforme o ctlModel do CID — vazio = direto; SBO = Select por leitura; SBOw = SelectWithValue; TERM = espera o CommandTermination (segurança reforçada). O OPCOES do CGF continua livre: I/S/SI liga interlock-check/synchro-check e Ox define o orCat (padrão O2, station-control)."),
       h("p", { class: "muted small" }, "Sem lógica, o simulador faz o eco: o estado do próprio objeto (ex.: CSWI.Pos.stVal) passa a valer o comando aceito. Para ligar o comando ao disjuntor (XCBR), intertravar ou simular tempo de manobra, crie uma lógica na aba Lógicas.")),
     h("div", { class: "card" }, h("div", { class: "row between" }, h("h2", {}, "Comandos recebidos"),
@@ -1707,6 +1722,7 @@ function subComandos(d) {
       h("div", { class: "tablewrap" }, h("table", {},
         h("thead", {}, h("tr", {}, ["Hora / cliente", "Objeto / endereço MMS", "Serviço", "Valor escrito", "Origem / ctlNum / Check", "Resultado", "Terminação"].map(x => h("th", {}, x)))), tb)),
       h("p", { class: "muted small" }, "Clique numa linha para ver todos os campos do comando (origem, ctlNum, T, Test, Check e os dados brutos).")));
+  q.addEventListener("input", debounce(renderCtl, 150));
   loadCtl();
   loadLog();
   const reCtl = throttle(loadCtl, 500);
