@@ -1758,9 +1758,11 @@ function subLogicas(d) {
   const el = h("div", { class: "lg-wrap" });
   const dbg = h("div", { class: "lg-debug" });
   const split = h("div", { class: "lg-split", title: "Arraste para ajustar a altura da tabela (duplo clique: tamanho padrão)" });
-  // Altura escolhida no arraste; limitada a 70% da coluna para o desenho não sumir se a janela diminuir.
+  // Altura escolhida no arraste: é o limite (max-height), não altura fixa, para o painel encolher quando tem
+  // poucas linhas; até 70% da coluna, para o desenho não sumir se a janela diminuir.
   // Chave nova (h2): descarta alturas gravadas por clique sem arraste na versão anterior.
-  const dbgAltura = px => Object.assign(dbg.style, { height: `min(${px}px, 70%)`, maxHeight: "none" });
+  const dbgAltura = px => Object.assign(dbg.style, { height: "", maxHeight: `min(${px}px, 70%)` });
+  let dbgFechado = store("lg.dbg.fechado") === "1";
   { const hh = +store("lg.dbg.h2"); if (hh > 0) dbgAltura(hh); }
   split.addEventListener("pointerdown", e => {
     e.preventDefault();
@@ -1780,6 +1782,12 @@ function subLogicas(d) {
     };
   });
   split.addEventListener("dblclick", () => { dbg.style.height = ""; dbg.style.maxHeight = ""; store("lg.dbg.h2", ""); wires(); });
+  function alternarDbg() {
+    dbgFechado = !dbgFechado;
+    store("lg.dbg.fechado", dbgFechado ? "1" : "");
+    renderDbg();
+    wires();
+  }
   let dbgRows = [], dbgOpen = null, dbgTick = 0;
   let catalogo = {}, logicas = [], pontos = {}, controles = [], ctlByKey = {};
   let cur = null;          // lógica em edição (cópia)
@@ -2367,15 +2375,23 @@ function subLogicas(d) {
       ondragleave: e => e.currentTarget.classList.remove("drop"),
       ondrop: e => { e.preventDefault(); dropCol(c.k); },
       ondragend: () => { if (dbgDrag) { dbgDrag = null; renderDbg(); } } }, c.t);
-    put(dbg, h("div", { class: "row between" }, h("h3", {}, "Sinais recebidos pelos objetos desta lógica"),
-        h("div", { class: "row" },
+    // Recolhido ou sem comandos, o painel fica numa ou duas linhas para não tirar espaço do desenho
+    dbg.classList.toggle("fechado", dbgFechado);
+    split.classList.toggle("hidden", dbgFechado);
+    const ajuda = "Mostra todos os serviços (Select, SelectWithValue, Operate, Cancel), inclusive os recusados antes de chegar à lógica. Clique numa linha para ver os dados brutos e como corrigir; arraste a barra acima da tabela para mudar a altura.";
+    put(dbg, h("div", { class: "row between" },
+        h("h3", { class: "lg-debug-tit", title: dbgFechado ? "Mostrar a tabela" : "Recolher a tabela", onclick: alternarDbg },
+          dbgFechado ? "▸ " : "▾ ", "Sinais recebidos pelos objetos desta lógica",
+          refs.length ? h("span", { class: "muted" }, ` (${dbgRows.length})`) : null),
+        dbgFechado ? null : h("div", { class: "row" },
           h("button", { class: "sm", onclick: escolherColunas, title: "Mostrar, ocultar e ordenar colunas" }, "☰ Colunas"),
           h("button", { class: "sm", onclick: loadDbg }, "↻ Atualizar"))),
-      !refs.length ? h("p", { class: "muted small" }, "Coloque um bloco Comando recebido (ou Bloqueio) para ver aqui o que o SAGE manda para o objeto.")
-        : h("div", { class: "tablewrap" }, h("table", {},
+      dbgFechado ? null
+        : !refs.length ? h("p", { class: "muted small" }, "Coloque um bloco Comando recebido (ou Bloqueio) para ver aqui o que o SAGE manda para o objeto.")
+        : !linhas.length ? h("p", { class: "muted small", title: ajuda }, `Nenhum comando recebido ainda para ${refs.map(x => x.split("/").pop()).join(", ")}.`)
+        : h("div", { class: "tablewrap", title: ajuda }, h("table", {},
           h("thead", {}, h("tr", {}, cols.map(th))),
-          h("tbody", {}, linhas.length ? linhas : h("tr", {}, h("td", { colspan: cols.length, class: "muted" }, `Nenhum comando recebido ainda para ${refs.map(x => x.split("/").pop()).join(", ")}.`))))),
-      refs.length ? h("p", { class: "muted small" }, "Mostra todos os serviços (Select, SelectWithValue, Operate, Cancel), inclusive os recusados antes de chegar à lógica. Clique numa linha para ver os dados brutos e como corrigir; arraste a barra acima da tabela para mudar a altura.") : null);
+          h("tbody", {}, linhas))));
   }
 
   // ------------------------------------------------------------ ao vivo

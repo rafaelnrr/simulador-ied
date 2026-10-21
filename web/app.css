@@ -458,7 +458,7 @@ button:focus:not(:focus-visible) { outline: none; }
 .rcb-form .grow > input { width: 100%; }
 
 /* Editor de lógicas */
-.lg-wrap { display: grid; grid-template-columns: 220px minmax(0, 1fr) 280px; gap: 12px; height: calc(100vh - 230px); min-height: 520px; }
+.lg-wrap { display: grid; grid-template-columns: 220px minmax(0, 1fr) 280px; grid-template-rows: minmax(0, 1fr); gap: 12px; height: calc(100vh - 230px); min-height: 520px; }
 .lg-side, .lg-right { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; overflow: auto; box-shadow: var(--shadow); }
 .lg-side h3, .lg-right h3 { margin: 4px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .lg-right h3 { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); }
@@ -480,6 +480,8 @@ button:focus:not(:focus-visible) { outline: none; }
 /* sinais recebidos (depuração), embaixo do desenho */
 .lg-debug { flex: 0 0 auto; max-height: 40%; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); padding: 8px 10px; }
 .lg-debug h3 { margin: 0; font-size: 14px; }
+.lg-debug-tit { cursor: pointer; user-select: none; }
+.lg-debug.fechado { max-height: none !important; }
 .lg-split { flex: 0 0 8px; margin: -4px 0; cursor: row-resize; border-radius: 4px; position: relative; touch-action: none; }
 .lg-split::after { content: ""; position: absolute; left: 50%; top: 3px; width: 48px; height: 3px; margin-left: -24px; border-radius: 2px; background: var(--line-2); }
 .lg-split:hover::after { background: var(--accent, #2a6fdb); }
@@ -520,7 +522,7 @@ button:focus:not(:focus-visible) { outline: none; }
 .lg-pick-i { display: flex; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
 .lg-pick-i:hover { background: var(--hover); }
 .lg-help li { margin-bottom: 6px; }
-@media (max-width: 1100px) { .lg-wrap { grid-template-columns: 1fr; height: auto; } .lg-stage { height: 520px; flex: none; } .lg-debug { max-height: none; height: auto !important; } .lg-split { display: none; } }
+@media (max-width: 1100px) { .lg-wrap { grid-template-columns: 1fr; grid-template-rows: none; height: auto; } .lg-stage { height: 520px; flex: none; } .lg-debug { max-height: none; height: auto !important; } .lg-split { display: none; } }
 .cmd-mms { word-break: break-all; font-size: 11px; }
 .lg-side, .lg-right { display: block; position: static; width: auto; height: auto; }
 
