@@ -2010,9 +2010,13 @@ function subLogicas(d) {
       if (!a || !z) return;
       const v = out ? (out[f.de] || {})[f.saida] : undefined;
       const on = v === true || (typeof v === "number" && v !== 0);
+      const fl = out ? cmdFlash[`${cur.id}:${f.de}`] : null;
+      const cmd = !!fl && fl.port === f.saida && fl.ate > Date.now();
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", curve(a, z));
-      path.setAttribute("class", "lg-wire" + (on ? " on" : "") + (selW === i ? " sel" : "") + (out && v === undefined ? "" : ""));
+      path.setAttribute("class", "lg-wire" + (on ? " on" : "") + (cmd ? " cmd" : "") + (selW === i ? " sel" : "") + (out && v === undefined ? "" : ""));
+      // o svg é refeito a cada 0,4 s: o atraso negativo mantém a fase da animação contínua
+      if (cmd) path.style.animationDelay = `-${(performance.now() % 300) / 1000}s`;
       path.addEventListener("pointerdown", e => { e.stopPropagation(); selW = i; selB = null; wires(); renderProps(); markSel(); });
       svg.append(path);
       if (out && typeof v === "number") {
@@ -2422,6 +2426,24 @@ function subLogicas(d) {
       n.el.classList.toggle("err", !!(lv && lv.erros[bid]));
     }
   }
+  // Comando recebido: o pulso dura uma varredura (50 ms) e a tela consulta a cada 0,4 s, então o fio quase
+  // nunca aparecia ligado. Cada "último comando" novo de um bloco destaca o fio da porta (Close/Trip) por 2,5 s.
+  const cmdSeen = {}, cmdFlash = {}, cmdInit = new Set();
+  function detectCmds() {
+    const lv = live && cur && cur.id ? live.logicas[cur.id] : null;
+    if (!lv) return;
+    const first = !cmdInit.has(cur.id);  // ao abrir a lógica, comandos antigos não animam
+    cmdInit.add(cur.id);
+    for (const [bid, u] of Object.entries(lv.ultimo || {})) {
+      const k = `${cur.id}:${bid}`;
+      if (cmdSeen[k] === u.ts) continue;
+      cmdSeen[k] = u.ts;
+      if (first) continue;
+      cmdFlash[k] = { port: u.valor === true ? "on" : u.valor === false ? "off" : "rec", ate: Date.now() + 2500 };
+      setTimeout(() => { if (!dirty && el.isConnected) wires(); }, 2600);
+    }
+  }
+
   function startLive() {
     clearInterval(liveTimer);
     live = null;
@@ -2429,6 +2451,7 @@ function subLogicas(d) {
     const tick = async () => {
       if (!el.isConnected) { clearInterval(liveTimer); return; }
       try { live = await api("GET", `/ieds/${id}/logicas/estado`); } catch { return; }
+      detectCmds();
       if (!dirty) { wires(); renderBar(); if (selB == null && selW == null) renderProps(); }
       if (++dbgTick % 3 === 0) loadDbg();
     };

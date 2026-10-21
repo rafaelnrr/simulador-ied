@@ -518,6 +518,8 @@ button:focus:not(:focus-visible) { outline: none; }
 .lg-wire.temp { stroke: var(--accent); stroke-dasharray: 5 4; pointer-events: none; }
 .lg-wtext { font: 11px var(--mono); fill: var(--muted); }
 @keyframes lg-flow { to { stroke-dashoffset: -13; } }
+.lg-wire.cmd { stroke: var(--accent, #2a6fdb); stroke-width: 5; stroke-dasharray: 12 6; animation: lg-flow-cmd .3s linear infinite; filter: drop-shadow(0 0 4px var(--accent, #2a6fdb)); }
+@keyframes lg-flow-cmd { to { stroke-dashoffset: -18; } }
 .lg-pick { max-height: 60vh; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
 .lg-pick-i { display: flex; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
 .lg-pick-i:hover { background: var(--hover); }
