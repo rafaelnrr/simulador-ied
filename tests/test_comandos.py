@@ -290,3 +290,66 @@ def test_logica_sem_saida_no_proprio_objeto_mantem_eco_do_estado(sim, tmp_path):
     run(go())
     cmds = sim.h.get(f"/ieds/{iid}/comandos", params={"ref": f"{CTRL}/CSWI2.Pos"}).json()["comandos"]
     assert len(cmds) == 3 and all(x["resultado"] == "aceito" and x["execucao"] == "lógica" for x in cmds)
+
+
+def test_logica_confere_posicao_no_ponto_comandado(sim, tmp_path):
+    """CSWI fechado e XCBR aberto (estado que ficou de antes): o Close vai, porque a posição é a do XCBR."""
+    ied = sim.create(cid_comandos(tmp_path))
+    iid, port = ied["id"], ied["porta"]
+    cswi = f"{CTRL}/CSWI2$Pos"
+    lg = {"nome": "Só XCBR", "blocos": [
+        {"id": "c", "tipo": "comando", "p": {"controle": cswi}},
+        {"id": "x", "tipo": "saida", "p": {"ponto": f"{CTRL}/XCBR1$ST$Pos"}},
+    ], "fios": [
+        {"de": "c", "saida": "on", "para": "x", "entrada": "on"}, {"de": "c", "saida": "off", "para": "x", "entrada": "off"},
+    ]}
+    assert sim.h.post(f"/ieds/{iid}/logicas", json=lg).status_code == 200
+    sim.set(iid, "CSWI2$ST$Pos", valor=2)
+    sim.set(iid, "XCBR1$ST$Pos", valor=1)
+
+    async def go():
+        c = await connect(port)
+        try:
+            await asyncio.sleep(0.2)
+            assert (await c.write([on(CTRL, "CSWI2$CO$Pos$Oper")], [oper(True, 1)]))[0] is None
+            await asyncio.sleep(0.2)
+            assert sim.point(iid, "XCBR1$ST$Pos")["valor"] == 2
+            assert (await c.write([on(CTRL, "CSWI2$CO$Pos$Oper")], [oper(True, 2)]))[0] is not None  # já fechado
+            assert (await c.write([on(CTRL, "CSWI2$CO$Pos$Oper")], [oper(False, 3)]))[0] is None
+            await asyncio.sleep(0.2)
+            assert sim.point(iid, "XCBR1$ST$Pos")["valor"] == 1
+        finally:
+            await c.close()
+    run(go())
+    cmds = sim.h.get(f"/ieds/{iid}/comandos", params={"ref": f"{CTRL}/CSWI2.Pos"}).json()["comandos"]
+    recusa = next(x for x in cmds if x["resultado"] == "recusado")
+    assert recusa["causa"] == "Position-reached" and "XCBR1" in recusa["causa_txt"]
+
+
+def test_logica_terminacao_espera_ponto_comandado(sim, tmp_path):
+    """Segurança reforçada com lógica: a CommandTermination sai quando o XCBR (com manobra) chega à posição."""
+    ied = sim.create(cid_comandos(tmp_path))
+    iid, port = ied["id"], ied["porta"]
+    lg = {"nome": "52 reforçado", "blocos": [
+        {"id": "c", "tipo": "comando", "p": {"controle": f"{CTRL}/CSWI1$Pos"}},
+        {"id": "x", "tipo": "saida", "p": {"ponto": f"{CTRL}/XCBR1$ST$Pos", "tempo_ms": 300}},
+    ], "fios": [
+        {"de": "c", "saida": "on", "para": "x", "entrada": "on"}, {"de": "c", "saida": "off", "para": "x", "entrada": "off"},
+    ]}
+    assert sim.h.post(f"/ieds/{iid}/logicas", json=lg).status_code == 200
+    sim.set(iid, "XCBR1$ST$Pos", valor=1)
+
+    async def go():
+        c = await connect(port)
+        try:
+            await asyncio.sleep(0.2)
+            assert (await c.write([on(CTRL, "CSWI1$CO$Pos$SBOw")], [oper(True, 1)]))[0] is None
+            assert (await c.write([on(CTRL, "CSWI1$CO$Pos$Oper")], [oper(True, 1)]))[0] is None
+            rs = await reports(c, 0.8)
+            assert [r for r in rs if r.get("vars") == [f"{CTRL}/CSWI1$CO$Pos$Oper"]], rs  # positiva
+            assert sim.point(iid, "XCBR1$ST$Pos")["valor"] == 2
+        finally:
+            await c.close()
+    run(go())
+    cmds = sim.h.get(f"/ieds/{iid}/comandos", params={"ref": f"{CTRL}/CSWI1.Pos"}).json()["comandos"]
+    assert any(x.get("terminacao") == "positiva" for x in cmds)

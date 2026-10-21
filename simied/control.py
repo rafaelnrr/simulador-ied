@@ -174,6 +174,7 @@ class CtlObj:
     def json(self) -> dict:
         p = self.point
         conf = self.svc.conf(self)
+        pp, _ = self.svc.position(self, True)  # ponto conferido em "já está na posição" (o da lógica, se houver)
         return {
             "ref": self.ref, "chave": self.key, "mms": self.mms(), "cdc": self.cdc, "desc": self.desc,
             "ctlModel": CTL_MODELS.get(self.model, str(self.model)), "ctlModel_n": self.model,
@@ -187,6 +188,7 @@ class CtlObj:
             "ponto": p.path if p is not None else None, "selecionado_por": self.sel_assoc.peer_str if self.sel_assoc else None,
             "em_execucao": self.busy is not None, "bloqueios": self.svc.blocks_for(self),
             "execucao": "lógica" if self.key in self.svc.logic_refs() else "eco", "config": conf,
+            "posicao": {"ponto": pp.path, "cdc": pp.cdc, "estado": pp.value()} if pp is not None and pp is not p else None,
         }
 
 
@@ -232,6 +234,16 @@ class ControlService:
     def logic_refs(self) -> set:
         lg = getattr(self.ied, "logic", None)
         return lg.command_refs() if lg is not None else set()
+
+    def position(self, o: CtlObj, ctl):
+        """(ponto, valor pedido) para "já está na posição" e CommandTermination: o ponto que a lógica comanda
+        (ex.: XCBR) quando ela não escreve no estado do próprio objeto; senão o estado do próprio objeto."""
+        lg = getattr(self.ied, "logic", None)
+        if lg is not None and o.key in self.logic_refs():
+            r = lg.position_for(o, ctl)
+            if r is not None:
+                return r
+        return o.point, o.target(ctl)
 
     def blocks_for(self, o: CtlObj) -> list:
         return list(self.blocks.get(o.key, []))
@@ -334,10 +346,9 @@ class ControlService:
                 if causa == 10 and not chk_ilk or causa == 11 and not chk_sync:
                     continue
             raise CmdReject(causa, detail=f"{CAUSA_TXT[causa]} (lógica “{b['logica']}”)")
-        tgt = o.target(ctl)
-        p = o.point
+        p, tgt = self.position(o, ctl)
         if tgt is not None and p is not None and self.conf(o).get("rejeitar_mesma_posicao") and p.value() == tgt:
-            raise CmdReject(5)
+            raise CmdReject(5, detail=None if p is o.point else f"{p.path.split('/')[-1].replace('$ST$', '.')} já está na posição pedida")
 
     def _select(self, assoc, o: CtlObj, value):
         self._deselect(o, notify=False)
@@ -432,12 +443,11 @@ class ControlService:
             self.ied.set_points([{"id": p.id, "valor": tgt}], origin=origin)
 
     async def _await_termination(self, assoc, o: CtlObj, vals: dict, raw_tlv: bytes, rec: dict):
-        tgt = o.target(vals.get("ctlVal"))
+        p, tgt = self.position(o, vals.get("ctlVal"))
         deadline = time.monotonic() + o.oper_timeout
         ok = tgt is None
         try:
             while not ok and time.monotonic() < deadline:
-                p = o.point
                 if p is not None and p.value() == tgt:
                     ok = True
                     break

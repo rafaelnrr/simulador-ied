@@ -1628,7 +1628,9 @@ function subComandos(d) {
           c.selecionado_por ? h("div", {}, h("span", { class: "badge warn" }, `selecionado por ${c.selecionado_por}`)) : null,
           c.em_execucao ? h("div", {}, h("span", { class: "badge info" }, "em execução")) : null),
         h("td", { class: "small" }, sageCell(c)),
-        h("td", {}, estadoBadge(c.cdc, c.estado)),
+        h("td", {}, estadoBadge(c.cdc, c.estado),
+          c.posicao ? h("div", { class: "desc", title: "Ponto que a lógica comanda: é por ele que o simulador confere se já está na posição pedida e espera a terminação" },
+            `posição em ${c.posicao.ponto.split("/").pop().replace("$ST$", ".")}: `, estadoBadge(c.posicao.cdc, c.posicao.estado)) : null),
         h("td", { class: "small" }, c.execucao === "lógica"
           ? h("a", { href: `#/ied/${id}/logicas` }, h("span", { class: "badge info" }, "lógica"))
           : h("span", { class: "badge neutral", title: "Sem lógica: o estado do próprio DO passa a valer o comando" }, "eco automático"),

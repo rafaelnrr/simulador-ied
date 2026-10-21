@@ -449,6 +449,10 @@ Objetos de controle do IED: cada DO com atributos FC=CO (`Oper`, `SBOw`, `Cancel
 - **Ajustes** (administrador): tempo de manobra, *timeout* da terminação (prazo para chegar à posição pedida),
   validade da seleção (SBO) e "rejeitar comando para a mesma posição".
 - **Comando de teste pela tela**: passa pelas mesmas verificações de um comando MMS.
+- **Com lógica**: quando um bloco **Comando recebido** assume o objeto e a lógica não escreve no estado do próprio
+  objeto (por exemplo, escreve só no XCBR), a verificação de "já está na posição" (Position-reached) e a espera da
+  CommandTermination usam o ponto duplo ligado direto à porta Close/Trip do bloco (o XCBR). Esse ponto aparece em
+  **Estado atual** como "posição em XCBR1.Pos". O estado do próprio objeto (CSWI) continua acompanhando o comando.
 - **Registro**: cada comando recebido, com objeto, endereço MMS, serviço, ctlVal, origem (orCat/orIdent),
   ctlNum, T, Test, Check, resultado/AddCause e terminação.
 

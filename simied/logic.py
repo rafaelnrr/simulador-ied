@@ -179,6 +179,31 @@ class LogicEngine:
         return any(b["tipo"] == "saida" and b["p"].get("ponto") == path
                    for lg in self.logics if lg.cfg["ativa"] for b in lg.blocks.values())
 
+    def position_for(self, o, ctl):
+        """(ponto, valor) que o comando deve levar à posição, quando a lógica não escreve no estado do próprio
+        objeto: o ponto duplo ligado direto à porta Close/Trip do bloco Comando (o XCBR, por exemplo).
+        É por ele que o controle confere "já está na posição" e espera a CommandTermination. None = o próprio objeto."""
+        own = o.point
+        if own is not None and self.writes_point(own.path):
+            return None
+        port = "on" if ctl is True else "off" if ctl is False else None
+        if port is None:
+            return None
+        for lg in self.logics:
+            if not lg.cfg["ativa"]:
+                continue
+            for b in lg.blocks.values():
+                if b["tipo"] != "comando" or b["p"].get("controle") != o.key:
+                    continue
+                for f in lg.cfg["fios"]:
+                    if f["de"] != b["id"] or f["saida"] != port:
+                        continue
+                    z = lg.blocks.get(f["para"])
+                    pt = self.ied.by_path.get((z or {}).get("p", {}).get("ponto") or "") if z and z["tipo"] == "saida" else None
+                    if pt is not None and pt.cdc in DBL and f["entrada"] in ("on", "off"):
+                        return pt, 2 if f["entrada"] == "on" else 1
+        return None
+
     def command(self, o, ctl, rec: dict):
         self.pending.setdefault(o.key, []).append(ctl)
         rec["logicas"] = [lg.cfg["nome"] for lg in self.logics if lg.cfg["ativa"] and any(
